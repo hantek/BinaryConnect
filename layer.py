@@ -194,13 +194,40 @@ class linear_layer(object):
             z = (z - mean)/(T.sqrt(var+self.BN_epsilon))
             z = self.a * z
         
-        z = z + self.b
+        self.z = z + self.b
         
         # activation function
-        y = self.activation(z)
+        y = self.activation(self.z)
         
         return y
     
+    def quantized_bprop(self, cost):
+        """
+        bprop equals:
+        (active_prime) *elem_multiply* error_signal_in * (rep of previous layer)
+        (rep of previous layer) is recoded as self.x during fprop() process.
+        Here we quantize (rep of previous layer) and leave the rest as it is.
+        """
+        # the lower 2**(integer power)
+        index_low = T.switch(self.x > 0., T.floor(T.log2(self.x)), T.floor(T.log2(-self.x)))
+        sign = T.switch(self.x > 0., 1., -1.)
+        # index_up = index_low + 1  # the upper 2**(integer power) though not used explicitly.
+        p_up = sign * self.x / 2**(index_low) - 1  # percentage of upper index.
+        srng = theano.sandbox.rng_mrg.MRG_RandomStreams(self.rng.randint(999999))
+        index_random = index_low + srng.binomial(n=1, p=p_up, size=T.shape(self.x), dtype=theano.config.floatX)
+        quantized_rep = sign * 2**index_random
+        # there is sth wrong with this self-made backprop: 
+        # the code is using BN, but this type of explicitly computation is not considering 
+        # gradients caused by BN.
+        # error = self.activation_prime(self.z) * error_signal_in
+        error = T.grad(cost=cost, wrt=self.z) 
+        self.dEdW = T.dot(quantized_rep.T, error)
+
+        self.dEdb = T.grad(cost=cost, wrt=self.b)
+
+        if self.BN == True:
+            self.dEda = T.grad(cost=cost, wrt=self.a)
+
     def bprop(self, cost):
         
         if self.binary_training == True:

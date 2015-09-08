@@ -72,7 +72,13 @@ class Network(object):
         # bprop
         for k in range(self.n_hidden_layers,-1,-1):
             self.layer[k].bprop(cost)
-    
+
+    def quantized_bprop(self, y, t):
+        batch_size = T.cast(T.shape(y)[0], dtype=theano.config.floatX)
+        cost = T.sum(T.sqr(T.maximum(0., 1. - t * y))) / batch_size
+        for k in range(self.n_hidden_layers, -1, -1):
+            self.layer[k].quantized_bprop(cost)
+
     def BN_updates(self, can_fit, x):
         
         y = self.fprop(x=x, can_fit=can_fit, eval=True) 
@@ -101,9 +107,9 @@ class Network(object):
     
     # you give it the input and the target and it gives you the updates
     def parameters_updates(self, x, t, LR, M):
-        
         y = self.fprop(x=x, can_fit=True,eval=False)        
-        self.bprop(y, t)
+        # you only need to change this line to: self.bprop(y, t) to generate the initial result.
+        self.quantized_bprop(y, t) 
         
         # updates
         updates = self.layer[0].parameters_updates(LR, M)

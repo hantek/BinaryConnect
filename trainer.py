@@ -226,7 +226,7 @@ class Trainer(object):
         
         # data augmentation
         self.DA_train_set = self.train_set
-        if (self.affine_transform_a != 0) or (self.affine_transform_b !=0):
+        if (self.affine_transform_a != 0) or (self.affine_transform_b != 0):
             self.DA_train_set = self.affine_transformations(self.DA_train_set)
         if self.horizontal_flip==True:
             self.DA_train_set = self.window_flip(self.DA_train_set)
@@ -438,10 +438,14 @@ class Trainer(object):
         
         # input and output variables
         x = T.tensor4('x')
+        # x.tag.test_value = np.random.random_sample([200, 1, 28, 28]).astype('float32')
         y = T.matrix('y')
-        index = T.scalar('index', dtype='int64') 
+        index = T.scalar('index', dtype='int64')
+        # index.tag.test_value = 0
         LR = T.scalar('LR', dtype=theano.config.floatX)
+        # LR.tag.test_value = .3
         M = T.scalar('M', dtype=theano.config.floatX)
+        # M.tag.test_value = 0.
 
         # before the build, you work with symbolic variables
         # after the build, you work with numeric variables
