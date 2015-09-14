@@ -401,13 +401,14 @@ class conv_layer(linear_layer):
         
         # shape the input as it should be (not necessary)
         # x = x.reshape(self.image_shape)
-        
+        self.x = x
         # binarize the weights
         self.Wb = self.binarize_weights(self.W,eval)
         # self.Wb = self.W
         
         # convolution
         z = T.nnet.conv.conv2d(x, self.Wb, border_mode='valid')
+        self.conv_z = z
 
         # Maxpooling
         if self.pool_shape != (1,1):
@@ -437,18 +438,50 @@ class conv_layer(linear_layer):
         
         # bias
         z = z + self.b.dimshuffle('x', 0, 'x', 'x')
-        
+
         # activation
         y = self.activation(z)
-        
+
         return y
 
+    def quantized_bprop(self, cost):
+        """
+        bprop for convolution layer equals:
+
+        (
+            self.x.dimshuffle(1, 0, 2, 3)       (*)
+            T.grad(cost, wrt=#convoutput).dimshuffle(1, 0, 2, 3)[:, :, ::-1, ::-1]
+        ).dimshuffle(1, 0, 2, 3)[:, :, ::-1, ::-1]
+        '(*)'stands for convolution.
+        Here we quantize (rep of previous layer) and leave the rest as it is.
+        """
+        # the lower 2**(integer power)
+        index_low = T.switch(self.x > 0., T.floor(T.log2(self.x)), T.floor(T.log2(-self.x)))
+        index_low = T.clip(index_low, -4, 3)
+        sign = T.switch(self.x > 0., 1., -1.)
+        #index_up = index_low + 1  # the upper 2**(integer power) though not used explicitly.
+        p_up = sign * self.x / 2**(index_low) - 1  # percentage of upper index.
+        srng = theano.sandbox.rng_mrg.MRG_RandomStreams(self.rng.randint(999999))
+        index_random = index_low + srng.binomial(n=1, p=p_up, size=T.shape(self.x), dtype=theano.config.floatX)
+        quantized_rep = sign * 2**index_random
+        error = T.grad(cost=cost, wrt=self.conv_z)
+
+        self.dEdW = T.nnet.conv.conv2d(
+            input=quantized_rep.dimshuffle(1, 0, 2, 3),
+            filters=error.dimshuffle(1, 0, 2, 3)[:, :, ::-1, ::-1]
+        ).dimshuffle(1, 0, 2, 3)[:, :, ::-1, ::-1]
+
+        self.dEdb = T.grad(cost=cost, wrt=self.b)
+
+        if self.BN == True:
+            self.dEda = T.grad(cost=cost, wrt=self.a)
+
+
 class ReLU_conv_layer(conv_layer):
-    
     def activation(self,z):
-    
         return T.maximum(0.,z)        
-        
+
+
 class Maxout_conv_layer(conv_layer):
     
     def __init__(self, rng, 

@@ -110,7 +110,9 @@ class Network(object):
         y = self.fprop(x=x, can_fit=True,eval=False)        
         # you only need to change this line to: self.bprop(y, t) to generate the initial result.
         self.quantized_bprop(y, t) 
-        
+        print "using quantized backprop."
+        # self.bprop(y, t)
+
         # updates
         updates = self.layer[0].parameters_updates(LR, M)
         for k in range(1,self.n_hidden_layers+1):

@@ -91,18 +91,18 @@ if __name__ == "__main__":
     print 'Loading the dataset' 
     
     train_set = SVHN(
-            which_set= 'splitted_train',
-            path= "${SVHN_LOCAL_PATH}",
-            axes= ['b', 'c', 0, 1])
+        which_set= 'splitted_train',
+        # path= "${SVHN_LOCAL_PATH}",
+        axes= ['b', 'c', 0, 1])
      
     valid_set = SVHN(
         which_set= 'valid',
-        path= "${SVHN_LOCAL_PATH}",
+        # path= "${SVHN_LOCAL_PATH}",
         axes= ['b', 'c', 0, 1])
     
     test_set = SVHN(
         which_set= 'test',
-        path= "${SVHN_LOCAL_PATH}",
+        # path= "${SVHN_LOCAL_PATH}",
         axes= ['b', 'c', 0, 1])
     
     # bc01 format
