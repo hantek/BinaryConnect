@@ -89,8 +89,11 @@ class linear_layer(object):
         return z
     
     def hard_sigm(self,x):
-        return T.clip((x+1)/2,0,1)
-    
+        return T.clip((x+1)/2, 0, 1)
+
+    def clipped_v(self, x):
+        return T.clip(T.abs_(x), 0, 1)
+
     def binarize_weights(self,W,eval):
         
         binary_deterministic_training = (self.binary_training == True) and (self.stochastic_training == False)
@@ -109,39 +112,19 @@ class linear_layer(object):
         # print "        binary_stochastic = "+str(binary_stochastic)
         
         # Binary weights
-        # I could scale x or z instead of W 
-        # and the dot product would become an accumulation
-        # I am not doing it to keep the code simple
         if binary_deterministic == True:
-                
-            # in the round to nearest case, we use binary weights during eval and training
-            # [?,?] -> -W0 or W0
-            Wb = T.switch(T.ge(W,0),self.W0,-self.W0)           
-        
+            larger_than_neg_0_5 = T.gt(W, -0.5)
+            larger_than_pos_0_5 = T.gt(W, 0.5)
+            W_val = larger_than_neg_0_5 * 1 + larger_than_pos_0_5 * 1 - 1
+            Wb = W_val * self.W0
+
         elif binary_stochastic == True:
-            
-            # apply hard sigmoid to get the probability
-            # [?,?] -> [0,1]
-            p = self.hard_sigm(W/self.W0)
-            
-            # much slower :(
-            # srng = T.shared_randomstreams.RandomStreams(rng.randint(999999))
-            
-            # much faster :)
-            # https://github.com/Theano/Theano/issues/1233#event-262671708
-            # does it work though ?? It seems so :)
+            w_sign = T.gt(W,0) * 2 - 1
+            p = self.clipped_v(W / self.W0)
             srng = theano.sandbox.rng_mrg.MRG_RandomStreams(self.rng.randint(999999))
+            Wb = self.W0 * w_sign * T.cast(srng.binomial(n=1, p=p, size=T.shape(W)), theano.config.floatX)
             
-            # Bernouilli distribution = binomial with n = 1
-            p_mask = T.cast(srng.binomial(n=1, p=p, size=T.shape(W)), theano.config.floatX)
-            
-            # [0,1] -> -W0 or W0
-            Wb = T.switch(p_mask,self.W0,-self.W0)
-            
-            # print "OK"
-            
-        # continuous weights
-        else:
+        else:  # continuous weights
             Wb = W
             
         return Wb
