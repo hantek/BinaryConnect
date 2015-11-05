@@ -452,6 +452,7 @@ class conv_layer(linear_layer):
             self.x.dimshuffle(1, 0, 2, 3)       (*)
             T.grad(cost, wrt=#convoutput).dimshuffle(1, 0, 2, 3)[:, :, ::-1, ::-1]
         ).dimshuffle(1, 0, 2, 3)[:, :, ::-1, ::-1]
+
         '(*)'stands for convolution.
         Here we quantize (rep of previous layer) and leave the rest as it is.
         """

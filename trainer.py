@@ -24,6 +24,7 @@ import sys
 import theano 
 import theano.tensor as T
 import time
+import matplotlib.pyplot as plt
 
 # for data augmentation
 from scipy.ndimage.interpolation import rotate, affine_transform
@@ -290,20 +291,52 @@ class Trainer(object):
             self.rng.shuffle(shuffled_range_i)
         
         for i in shuffled_range_i:
+            
+            #rep_0=[]
+            #rep_1=[]
+            #rep_2=[]
+            #rep_3=[]
         
             self.load_shared_dataset(set,
                 start=i*self.number_of_batches_on_gpu*self.batch_size,
                 size=self.number_of_batches_on_gpu*self.batch_size)
             
             shuffled_range_j = range(self.number_of_batches_on_gpu)
-            
             if self.shuffle_batches==True:
                 self.rng.shuffle(shuffled_range_j)
             
             for j in shuffled_range_j:  
-
                 self.train_batch(j, self.LR, self.M)
+                
+                #rep0, rep1, rep2, rep3 = self.monitor_x(j)
+                #rep_0.append(rep0)
+                #rep_1.append(rep1)
+                #rep_2.append(rep2)
+                #rep_3.append(rep3)
         
+            #rep_0 = np.concatenate(rep_0)
+            #rep_1 = np.concatenate(rep_1)
+            #rep_2 = np.concatenate(rep_2)
+            #rep_3 = np.concatenate(rep_3)
+            #if not hasattr(self, '_hist_weight'):
+            #    self._hist_weight = plt.figure(figsize=(10, 5))
+            #    self.hist_ax0 = self._hist_weight.add_subplot(411)
+            #    self.hist_ax1 = self._hist_weight.add_subplot(412)
+            #    self.hist_ax2 = self._hist_weight.add_subplot(413)
+            #    self.hist_ax3 = self._hist_weight.add_subplot(414)
+            #else:
+            #    self.hist_ax0.cla()
+            #    self.hist_ax1.cla()
+            #    self.hist_ax2.cla()
+            #    self.hist_ax3.cla()
+
+            #n, bins, patches = self.hist_ax0.hist(rep0.flatten(), 50, facecolor='blue')
+            #n, bins, patches = self.hist_ax1.hist(rep1.flatten(), 50, facecolor='blue')
+            #n, bins, patches = self.hist_ax2.hist(rep2.flatten(), 50, facecolor='blue')
+            #n, bins, patches = self.hist_ax3.hist(rep3.flatten(), 50, facecolor='blue')
+            #self._hist_weight.canvas.draw()
+            #plt.pause(0.05)
+
         # load the last incomplete gpu batch of batches
         if n_remaining_batches > 0:
         
@@ -460,6 +493,23 @@ class Trainer(object):
                 y: self.shared_y[index * self.batch_size:(index + 1) * self.batch_size]},
                 name = "test_batch", on_unused_input='warn')
         
+        nonzero_x0 = self.model.layer[0].x[T.nonzero(self.model.layer[0].x)]
+        nonzero_x1 = self.model.layer[1].x[T.nonzero(self.model.layer[1].x)]
+        nonzero_x2 = self.model.layer[2].x[T.nonzero(self.model.layer[2].x)]
+        nonzero_x3 = self.model.layer[3].x[T.nonzero(self.model.layer[3].x)]
+        index0 = T.switch(nonzero_x0 > 0., T.log2(nonzero_x0), T.log2(-nonzero_x0))
+        index1 = T.switch(nonzero_x1 > 0., T.log2(nonzero_x1), T.log2(-nonzero_x1))
+        index2 = T.switch(nonzero_x2 > 0., T.log2(nonzero_x2), T.log2(-nonzero_x2))
+        index3 = T.switch(nonzero_x3 > 0., T.log2(nonzero_x3), T.log2(-nonzero_x3))
+
+        self.monitor_x = theano.function(
+            inputs=[index],
+            outputs=[index0, index1, index2, index3],
+            givens={
+                x: self.shared_x[index * self.batch_size:(index + 1) * self.batch_size],
+                y: self.shared_y[index * self.batch_size:(index + 1) * self.batch_size]},
+            name = "monitor", on_unused_input='warn'
+        )
         # batch normalization specific functions
         if self.BN == True: 
         

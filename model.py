@@ -107,7 +107,7 @@ class Network(object):
     
     # you give it the input and the target and it gives you the updates
     def parameters_updates(self, x, t, LR, M):
-        y = self.fprop(x=x, can_fit=True,eval=False)        
+        y = self.fprop(x=x, can_fit=True, eval=False) 
         # you only need to change this line to: self.bprop(y, t) to generate the initial result.
         self.quantized_bprop(y, t) 
         print "using quantized backprop."
