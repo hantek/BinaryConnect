@@ -71,8 +71,8 @@ if __name__ == "__main__":
     M= 0.
     
     # BinaryConnect
-    BinaryConnect = True
-    stochastic = True
+    BinaryConnect = False
+    stochastic = False
     
     # Old hyperparameters
     binary_training=False 

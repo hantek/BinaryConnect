@@ -79,8 +79,8 @@ if __name__ == "__main__":
     n_hidden_layer = 3
     
     # BinaryConnect
-    BinaryConnect = True
-    stochastic = True
+    BinaryConnect = False
+    stochastic = False
     
     # Old hyperparameters
     binary_training=False 
