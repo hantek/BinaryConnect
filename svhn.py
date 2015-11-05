@@ -2,9 +2,24 @@
 
 """
 This file is adapted from BinaryConnect:
+
     https://github.com/MatthieuCourbariaux/BinaryConnect
-Running this script should reproduce the results of a vanilla ConvNet trained
-on CIFAR10 shown in the paper. 
+
+Running this script should reproduce the results trained on SVHN shown in
+the paper.
+
+To train a vanilla ConvNet with ordinary backprop:
+   1. type "git checkout fullresolution" to switch to the "fullresolution" branch
+   2. execute "python svhn.py"
+
+To train a ConvNet with Binary Connect + quantized backprop:
+   1. type "git checkout binary" to switch to the "binary" branch
+   2. execute "python svhn.py"
+
+To train a ConvNet with Ternary Connect + quantized backprop:
+   1. type "git checkout ternary" to switch to the "ternary" branch
+   2. execute "python svhn.py"
+
 """
 
 import gzip

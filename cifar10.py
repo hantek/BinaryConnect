@@ -8,8 +8,12 @@ This file is adapted from BinaryConnect:
 Running this script should reproduce the results trained on CIFAR10 shown in
 the paper.
 
+To train a vanilla ConvNet with ordinary backprop:
+   1. type "git checkout fullresolution" to switch to the "fullresolution" branch
+   2. execute "python cifar10.py"
+
 To train a ConvNet with Binary Connect + quantized backprop:
-   1. ensure that you are at the "binary" branch
+   1. type "git checkout binary" to switch to the "binary" branch
    2. execute "python cifar10.py"
 
 To train a ConvNet with Ternary Connect + quantized backprop:
