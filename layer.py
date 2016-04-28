@@ -395,7 +395,7 @@ class conv_layer(linear_layer):
 
         # Maxpooling
         if self.pool_shape != (1,1):
-            z = T.signal.downsample.max_pool_2d(input=z, ds=self.pool_shape, st=self.pool_stride)
+            z = T.signal.pool.pool_2d(input=z, ds=self.pool_shape, st=self.pool_stride)
         
         # for BN
         self.z = z
